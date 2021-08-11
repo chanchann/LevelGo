@@ -1,7 +1,10 @@
 package skiplist
 
+// interface{}
+// 指定了0个方法的接口值，被称为空接口
+// 空接口可保存任何类型的值，所以被用来处理未知类型的值
 type Node struct {
-	key interface{}
+	key interface{}   
 	next []*Node 
 }
 

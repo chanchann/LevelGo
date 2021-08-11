@@ -4,9 +4,9 @@ package utils
 // 0 , if a == b
 // 1 . if a > b
 
-type Comparator func(a, b, interface{}) int
+type Comparator func(a, b interface{}) int
 
-func IntComparator(a, b, interface{}) int {
+func IntComparator(a, b interface{}) int {
 	aAsserted := a.(int)
 	bAsseted := b.(int)
 	switch {
