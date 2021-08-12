@@ -5,7 +5,7 @@ package skiplist
 // 空接口可保存任何类型的值，所以被用来处理未知类型的值
 type Node struct {
 	key interface{}   
-	next []*Node 
+	next []*Node   
 }
 
 func newNode(key interface{}, height int) *Node {
