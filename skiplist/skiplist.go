@@ -1,7 +1,7 @@
 package skiplist
 
 import (
-	// "math/rand"
+	"math/rand"
 	"sync"
 	"github.com/chanchann/LevelGo/utils"  
 )
@@ -12,21 +12,23 @@ const (
 	kBranching = 4
 )
 
+// todo: need Arena ?  
+
 // todo : go 也可以实现一些多读并发skiplist
-// todo : go lock
+// todo : 此处可以用原子操作吗
 type SkipList struct {
 	maxHeight int
 	head *Node
-	comparator utssils.Comparator
+	compare utils.Comparator
 	mu sync.RWMutex
 }
 
 // go没有构造函数，没有析构函数，需要写个New函数
-func New(comp utils.Comparator) *SkipList {
+func New(cmp utils.Comparator) *SkipList {
 	var skiplist SkipList   
 	skiplist.head = newNode(0, kMaxHeight)
 	skiplist.maxHeight = 1
-	skiplist.comparator = comp  
+	skiplist.compare = cmp  
 	return &skiplist
 }
 
@@ -53,7 +55,7 @@ func (list *SkipList) Contains(key interface{}) bool {
 	list.mu.RLock()   // 加读锁
 	defer list.mu.RUnlock()
 	x, _ := list.findGreaterOrEqual(key)
-	if x != nil && list.comparator(x.key, key) == 0 {
+	if x != nil && list.compare(x.key, key) == 0 {
 		return true
 	}
 	return false
@@ -99,8 +101,8 @@ func (list *SkipList) findLessThan(key interface{}) *Node {
 	level := list.maxHeight - 1
 	for true {
 		next := x.getNext(level)
-		if next == nil || list.comparator(next.key, key) >= 0 {
-			if next == nil || list.comparator(next.key, key) >= 0 {
+		if next == nil || list.compare(next.key, key) >= 0 {
+			if next == nil || list.compare(next.key, key) >= 0 {
 				if level == 0 {
 					return x
 				} else {
@@ -114,7 +116,7 @@ func (list *SkipList) findLessThan(key interface{}) *Node {
 	return nil
 }
 
-func (list *Skiplist) findlast() *Node {
+func (list *SkipList) findlast() *Node {
 	x := list.head 
 	level := list.maxHeight - 1
 	for true {
@@ -133,5 +135,5 @@ func (list *Skiplist) findlast() *Node {
 }
 
 func (list *SkipList) keyIsAfterNode(key interface{}, n *Node) bool {
-	return (n != nil) && (list.comparator(n.key, key) < 0)
+	return (n != nil) && (list.compare(n.key, key) < 0)
 }
