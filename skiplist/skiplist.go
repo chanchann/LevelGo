@@ -12,10 +12,10 @@ const (
 	kBranching = 4
 )
 
-// todo: need Arena ?  
-
+// todo: Arena ? 
 // todo : go 也可以实现一些多读并发skiplist
-// todo : 此处可以用原子操作吗
+// todo : 此处对比c++原子操作
+
 type SkipList struct {
 	maxHeight int
 	head *Node
@@ -26,7 +26,7 @@ type SkipList struct {
 // go没有构造函数，没有析构函数，需要写个New函数
 func New(cmp utils.Comparator) *SkipList {
 	var skiplist SkipList   
-	skiplist.head = newNode(0, kMaxHeight)
+	skiplist.head = newNode(0, kMaxHeight)   // dummy
 	skiplist.maxHeight = 1
 	skiplist.compare = cmp  
 	return &skiplist
@@ -36,7 +36,14 @@ func (list *SkipList) Insert(key interface{}) {
 	list.mu.Lock()    // 加写锁
 	defer list.mu.Unlock()   // 本函数执行完一定解锁
 
-	_, prev := list.findGreaterOrEqual(key)
+	next, prev := list.findGreaterOrEqual(key)
+	// todo : 我们这里如何处置插入相同的值？
+	if next != nil && list.compare(next.key, key) == 0 {
+		// panic == c++ throw exception
+		// todo : 深入了解
+		panic("insert same key")
+	}
+
 	height := list.randomHeight()
 	if height > list.maxHeight {
 		for i := list.maxHeight; i < height; i++ {
@@ -54,6 +61,7 @@ func (list *SkipList) Insert(key interface{}) {
 func (list *SkipList) Contains(key interface{}) bool {
 	list.mu.RLock()   // 加读锁
 	defer list.mu.RUnlock()
+
 	x, _ := list.findGreaterOrEqual(key)
 	if x != nil && list.compare(x.key, key) == 0 {
 		return true
@@ -102,15 +110,13 @@ func (list *SkipList) findLessThan(key interface{}) *Node {
 	for true {
 		next := x.getNext(level)
 		if next == nil || list.compare(next.key, key) >= 0 {
-			if next == nil || list.compare(next.key, key) >= 0 {
-				if level == 0 {
-					return x
-				} else {
-					level--
-				}
+			if level == 0 {
+				return x
 			} else {
-				x = next
+				level--
 			}
+		} else {
+			x = next
 		}
 	}
 	return nil

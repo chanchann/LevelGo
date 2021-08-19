@@ -1,49 +1,50 @@
 package memtable
 
 import (
-	"errors"
-	// "github.com/chanchann/LevelGo"
+	"github.com/chanchann/LevelGo/internal"
 	"github.com/chanchann/LevelGo/skiplist"
 )
-
 type MemTable struct {
-	table *skiplist.SkipList   //核心就是skiplist
+	table *skiplist.SkipList  // 核心就是skiplist
+	memoryUsage uint64
 }
 
 func New() *MemTable {
 	var memTable MemTable
-	memTable.table = skiplist.New(InternalKeyComparator)  // todo
+	memTable.table = skiplist.New(internal.InternalKeyComparator)
 	return &memTable
 }
 
-func (memTable *MemTable) NewIterator() levelgo.Iterator {   // todo
-	return memTable.table.NewIterator() 
+func (memTable *MemTable) NewIterator() *Iterator {
+	return &Iterator{listIter: memTable.table.NewIterator()}
 }
 
-// 将四个参数编码成一个internalKey
-func (memTable *MemTable) Add(seq int64, valueType ValueType, key, value []byte) {
-	internalKey := newInternalKey(seq, valueType, key, value)
+func (memTable *MemTable) Add(seq uint64, valueType internal.ValueType, key, value []byte) {
+	internalKey := internal.NewInternalKey(seq, valueType, key, value)
+
+	memTable.memoryUsage += uint64(16 + len(key) + len(value))
 	memTable.table.Insert(internalKey)
 }
 
-func (memTable *MemTbale) Get(key []bytes) (bool, []byte, error) {
-	lookupKey := LookupKey(key)
+func (memTable *MemTable) Get(key []byte) ([]byte, error) {
+	lookupKey := internal.LookupKey(key)
 
-	it := memTbale.table.NewIterator()
+	it := memTable.table.NewIterator()
 	it.Seek(lookupKey)
 	if it.Valid() {
-		internalKey := it.Key().(*InternalKey)
-		if UserKeyComparator(key, internalKey.userKey()) == 0 {
+		internalKey := it.Key().(*internal.InternalKey)
+		if internal.UserKeyComparator(key, internalKey.UserKey) == 0 {
 			// 判断valueType
-			if internalKey.valueType() == TypeValue {
-				return true, internalKey.userValue(), nil
+			if internalKey.Type == internal.TypeValue {
+				return internalKey.UserValue, nil
 			} else {
-				return true, nil, erros.New("not found")
+				return nil, internal.ErrDeletion
 			}
 		}
 	}
-	return false, nil, errors.New("not found")
+	return nil, internal.ErrNotFound
 }
 
-
-
+func (memTable *MemTable) ApproximateMemoryUsage() uint64 {
+	return memTable.memoryUsage
+}

@@ -13,6 +13,7 @@ func (it *Iterator) Key() interface{} {
 	return it.node.key
 }
 
+// todo: 对比c++的lock free，再理一下如何加锁
 func (it *Iterator) Next() {
 	it.list.mu.RLock()
 	defer it.list.mu.RLock()

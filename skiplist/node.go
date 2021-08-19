@@ -8,18 +8,27 @@ type Node struct {
 	next []*Node   
 }
 
+// new vs make 
+// new(T) 为一个 T 类型新值分配空间并将此空间初始化为 T 的零值，返回的是新值的地址，也就是 T 类型的指针 *T
+// make 只能用于 slice,map,channel
+// https://sanyuesha.com/2017/07/26/go-make-and-new/
+// https://zhuanlan.zhihu.com/p/340988277
 func newNode(key interface{}, height int) *Node {
-	x := new(Node)
-	x.key = key  
-	x.next = make([]*Node, height)
+	node := new(Node)
+	node.key = key  
+	node.next = make([]*Node, height)
 
-	return x
+	return node
 }
 
+
+// todo : 这里只实现了No-barrier
+// todo : memory_order_acquire?
 func (node *Node) getNext(level int) *Node {
 	return node.next[level]
 }
 
+// todo : memory_order_release?
 func (node *Node) setNext(level int, x *Node) {
 	node.next[level] = x
 }
